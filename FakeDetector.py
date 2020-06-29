@@ -36,13 +36,13 @@
 # The status "FAILURE/BAD" is passed to other scripts and informs them
 # about failure.
 #
-# PP-Script version: 1.7.
+# PP-Script version: 2.0.
 #
 # For more info and updates please visit forum topic at
 # http://nzbget.net/forum/viewtopic.php?f=8&t=1394.
 #
 # NOTE: This script requires Python to be installed on your system (tested
-# only with Python 2.x; may not work with Python 3.x).
+# only with Python 3.x).
 
 
 ##############################################################################
@@ -63,9 +63,9 @@ import os
 import sys
 import subprocess
 import re
-import urllib2
-import base64
-from xmlrpclib import ServerProxy
+import urllib.request, urllib.error, urllib.parse
+from xmlrpc.client import ServerProxy
+from base64 import b64encode
 import shlex
 import traceback
 
@@ -215,7 +215,7 @@ def list_all_rars(dir):
 					print('command: %s' % command)
 				proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				out_tmp, err = proc.communicate()
-				out += out_tmp
+				out += out_tmp.decode()
 				result = proc.returncode
 				if verbose:
 					print(out_tmp)
@@ -292,14 +292,16 @@ def call_nzbget_direct(url_command):
 
 	# Building http-URL to call the method
 	httpUrl = 'http://%s:%s/jsonrpc/%s' % (host, port, url_command);
-	request = urllib2.Request(httpUrl)
+	request = urllib.request.Request(httpUrl)
 
-	base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+	authString = '%s:%s' % (username, password)
+	base64string = b64encode(authString.encode()).decode("ascii")
+
 	request.add_header("Authorization", "Basic %s" % base64string)
 
 	# Load data from NZBGet
-	response = urllib2.urlopen(request)
-	data = response.read()
+	response = urllib.request.urlopen(request)
+	data = response.read().decode('utf-8')
 
 	# "data" is a JSON raw-string
 	return data
